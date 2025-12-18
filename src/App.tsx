@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as iap from "@choochmeque/tauri-plugin-iap-api";
 import "./App.css";
 
 function App() {
@@ -8,21 +9,17 @@ function App() {
     try {
       setMessage("Testing getProducts...");
       
-      // @ts-ignore - plugin may not have types
-      const iap = window.__TAURI__?.plugins?.iap;
+      // Initialize first
+      await iap.initialize();
+      setMessage("✅ IAP initialized, calling getProducts...");
       
-      if (!iap) {
-        setMessage("❌ IAP plugin not found on window.__TAURI__");
-        return;
-      }
+      // Call with correct signature: getProducts(productIds: string[], productType?: "subs" | "inapp")
+      const result = await iap.getProducts(
+        ["com.test.product1", "com.test.subscription1"],
+        "subs"
+      );
       
-      setMessage("✅ IAP plugin found, calling getProducts...");
-      
-      const products = await iap.getProducts({
-        productIds: ["com.test.product1", "com.test.subscription1"]
-      });
-      
-      setMessage(`✅ getProducts succeeded!\n${JSON.stringify(products, null, 2)}`);
+      setMessage(`✅ getProducts succeeded!\n${JSON.stringify(result, null, 2)}`);
     } catch (error: any) {
       setMessage(`❌ getProducts error: ${error?.message || error}`);
       console.error("IAP getProducts Error:", error);
@@ -33,55 +30,42 @@ function App() {
     try {
       setMessage("Testing purchase...");
       
-      // @ts-ignore - plugin may not have types
-      const iap = window.__TAURI__?.plugins?.iap;
+      // Initialize first
+      await iap.initialize();
+      setMessage("✅ IAP initialized, calling purchase...");
       
-      if (!iap) {
-        setMessage("❌ IAP plugin not found on window.__TAURI__");
-        return;
-      }
+      // Call with correct signature: purchase(productId: string, productType?: "subs" | "inapp", options?: PurchaseOptions)
+      const result = await iap.purchase("com.test.product1", "subs");
       
-      setMessage("✅ IAP plugin found, calling purchase...");
-      
-      await iap.purchase({
-        productId: "com.test.product1",
-        type: "subscription"
-      });
-      
-      setMessage("✅ Purchase called successfully!");
+      setMessage(`✅ purchase succeeded!\n${JSON.stringify(result, null, 2)}`);
     } catch (error: any) {
-      setMessage(`❌ Purchase error: ${error?.message || error}`);
-      console.error("IAP Purchase Error:", error);
+      setMessage(`❌ purchase error: ${error?.message || error}`);
+      console.error("IAP purchase Error:", error);
     }
   };
 
   return (
     <div className="container">
-      <h1>Tauri IAP Plugin Test</h1>
+      <h1>IAP Plugin Test</h1>
       
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+      <div className="card">
         <button onClick={testGetProducts}>
-          Test getProducts()
+          Get Products
         </button>
-        
         <button onClick={testPurchase}>
-          Test purchase()
+          Purchase Product
         </button>
       </div>
-      
-      {message && (
-        <div style={{ 
-          marginTop: "20px", 
-          padding: "10px", 
-          border: "1px solid #ccc",
-          whiteSpace: "pre-wrap",
-          textAlign: "left",
-          maxHeight: "400px",
-          overflow: "auto"
-        }}>
-          {message}
-        </div>
-      )}
+
+      <pre style={{ 
+        textAlign: 'left', 
+        whiteSpace: 'pre-wrap', 
+        wordWrap: 'break-word',
+        maxWidth: '100%',
+        fontSize: '12px'
+      }}>
+        {message}
+      </pre>
     </div>
   );
 }
